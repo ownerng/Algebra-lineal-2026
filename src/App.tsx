@@ -56,11 +56,11 @@ export default function App() {
           </div>
         </div>
 
-        <div style={{ overflowY: 'auto', flex: 1 }}>
+        <div className="page-body">
           {mode === 'gauss'   && <GaussPage />}
           {mode === 'matops'  && <MatOpsPage />}
           {mode === 'vectors' && <VectorsPage />}
-          {mode === 'guide'   && <GuideModule />}
+          {mode === 'guide'   && <div className="content"><GuideModule /></div>}
         </div>
       </main>
     </div>

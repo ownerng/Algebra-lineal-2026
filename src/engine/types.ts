@@ -20,6 +20,7 @@ export interface Step {
   swapRow2: number
   matrixSnap: number[][]
   description: string
+  reason: string
   variable: string
   solution: number[]
   opCount: number
@@ -50,6 +51,7 @@ export interface MatOpsStep {
   bCol: number
   snapC: number[][]
   description: string
+  reason: string
   opCount: number
 }
 
@@ -70,6 +72,7 @@ export enum VecOpKind {
 
 export interface VecStep {
   description: string
+  reason: string
   latex: string
   resultVec?: [number, number, number]
   highlightA?: boolean

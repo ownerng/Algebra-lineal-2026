@@ -10,6 +10,7 @@ function step(partial: Partial<MatOpsStep>): MatOpsStep {
     bRow: 0, bCol: 0,
     snapC: [],
     description: '',
+    reason: '',
     opCount: 0,
     ...partial,
   }
@@ -21,6 +22,7 @@ function matAddSub(A: number[][], B: number[][], op: MatOpKind): MatOpsStep[] {
   let opCount = 0
   const steps: MatOpsStep[] = []
   const sym = op === MatOpKind.Add ? '+' : '-'
+  const opName = op === MatOpKind.Add ? 'suma' : 'resta'
 
   for (let i = 0; i < n; i++) {
     for (let j = 0; j < n; j++) {
@@ -29,7 +31,8 @@ function matAddSub(A: number[][], B: number[][], op: MatOpKind): MatOpsStep[] {
         row: i, col: j,
         aRow: i, aCol: j, bRow: i, bCol: j,
         snapC: cloneMatrix(C),
-        description: `Calculando C[${i+1}][${j+1}] = A[${i+1}][${j+1}] ${sym} B[${i+1}][${j+1}]`,
+        description: `C[${i+1}][${j+1}] = A[${i+1}][${j+1}] ${sym} B[${i+1}][${j+1}]`,
+        reason: `La ${opName} de matrices opera entrada a entrada: los índices (i,j) deben coincidir exactamente.`,
         opCount,
       }))
 
@@ -42,12 +45,13 @@ function matAddSub(A: number[][], B: number[][], op: MatOpKind): MatOpsStep[] {
         aRow: i, aCol: j, bRow: i, bCol: j,
         snapC: cloneMatrix(C),
         description: `C[${i+1}][${j+1}] = ${fracDisplay(A[i][j])} ${sym} ${fracDisplay(B[i][j])} = ${fracDisplay(C[i][j])}`,
+        reason: `Resultado en (${i+1},${j+1}): las matrices deben tener el mismo tamaño para que esta operación sea válida.`,
         opCount,
       }))
     }
   }
 
-  steps.push(step({ type: MatOpType.Complete, op, snapC: cloneMatrix(C), description: 'Operación completada', opCount }))
+  steps.push(step({ type: MatOpType.Complete, op, snapC: cloneMatrix(C), description: 'Operación completada', reason: 'Todas las entradas han sido calculadas; la matriz C es el resultado final.', opCount }))
   return steps
 }
 
@@ -66,7 +70,8 @@ export function matMul(A: number[][], B: number[][]): MatOpsStep[] {
         type: MatOpType.HighlightRowCol, op: MatOpKind.Mul,
         row: i, col: j, aRow: i, bCol: j,
         snapC: cloneMatrix(C),
-        description: `C[${i+1}][${j+1}] = fila ${i+1} de A × col ${j+1} de B`,
+        description: `C[${i+1}][${j+1}] = fila ${i+1} de A · col ${j+1} de B`,
+        reason: 'La multiplicación de matrices calcula el producto punto entre la fila i de A y la columna j de B.',
         opCount,
       }))
 
@@ -79,11 +84,12 @@ export function matMul(A: number[][], B: number[][]): MatOpsStep[] {
         row: i, col: j, aRow: i, bCol: j,
         snapC: cloneMatrix(C),
         description: `C[${i+1}][${j+1}] = ${fracDisplay(sum)}`,
+        reason: 'Este valor es la suma de n productos: Σ A[i][k]·B[k][j] para k = 1…n.',
         opCount,
       }))
     }
   }
 
-  steps.push(step({ type: MatOpType.Complete, op: MatOpKind.Mul, snapC: cloneMatrix(C), description: 'Multiplicación completada', opCount }))
+  steps.push(step({ type: MatOpType.Complete, op: MatOpKind.Mul, snapC: cloneMatrix(C), description: 'Multiplicación completada', reason: 'Todas las entradas de C han sido calculadas mediante productos punto de filas y columnas.', opCount }))
   return steps
 }

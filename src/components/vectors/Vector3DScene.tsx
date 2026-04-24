@@ -211,10 +211,10 @@ export default function Vector3DScene({ vecA, vecB, result, op, highlightA = tru
       />
       <OrbitControls
         enablePan={false}
-        minDistance={2}
-        maxDistance={12}
+        minDistance={1.5}
+        maxDistance={24}
         enableDamping
-        dampingFactor={0.08}
+        dampingFactor={0.06}
       />
     </Canvas>
   )
