@@ -129,61 +129,58 @@ export default function GaussPage() {
     <div className={`gauss-page ${result ? 'gauss-page--presenting' : ''}`} ref={stageRef}>
 
       {!result ? (
-        <div className="gauss-input-view">
-          <div className="gauss-input-card">
-            <div className="gauss-input-header">
-              <div>
-                <div className="module-eyebrow">Módulo · Sistemas Lineales</div>
-                <h1 className="module-title">Método de Gauss-Jordan</h1>
-                <p className="module-desc">
-                  Ingrese un sistema de ecuaciones lineales y proyecte la reducción paso a paso.
-                </p>
+        <div className="module-landing">
+          <div className="module-landing-center">
+            <div className="module-landing-left">
+              <div className="module-eyebrow">Módulo · Sistemas Lineales</div>
+              <h1 className="module-landing-title">Gauss-Jordan</h1>
+              <p className="module-landing-desc">
+                Ingrese un sistema de ecuaciones lineales y proyecte la reducción paso a paso.
+              </p>
+
+              {error && <div className="error-banner">{error}</div>}
+
+              <div className="eq-list">
+                {equations.map((eq, i) => (
+                  <div className="eq-row" key={i}>
+                    <div className="eq-num">{i + 1}.</div>
+                    <input
+                      className="eq-input" value={eq}
+                      onChange={e => updateEq(i, e.target.value)}
+                      placeholder={`ecuación ${i + 1}`}
+                      spellCheck={false}
+                      onKeyDown={e => e.key === 'Enter' && handleSolve()}
+                    />
+                    {equations.length > 1 && (
+                      <button className="eq-remove" onClick={() => removeEq(i)}><IconRemove /></button>
+                    )}
+                  </div>
+                ))}
               </div>
-              <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
-                <span className="chip">Animado</span>
-                <span className="chip amber">Pivote</span>
-                <span className="chip terra">Eliminación</span>
-              </div>
-            </div>
 
-            {error && <div className="error-banner">{error}</div>}
-
-            <div className="eq-list">
-              {equations.map((eq, i) => (
-                <div className="eq-row" key={i}>
-                  <div className="eq-num">{i + 1}.</div>
-                  <input
-                    className="eq-input" value={eq}
-                    onChange={e => updateEq(i, e.target.value)}
-                    placeholder={`ecuación ${i + 1}`}
-                    spellCheck={false}
-                    onKeyDown={e => e.key === 'Enter' && handleSolve()}
-                  />
-                  {equations.length > 1 && (
-                    <button className="eq-remove" onClick={() => removeEq(i)}><IconRemove /></button>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <div style={{ display: 'flex', gap: 8, marginTop: 14 }}>
-              <button className="btn btn-ghost" onClick={addEq} style={{ fontSize: 13 }}>
-                <IconAdd /> Agregar ecuación
-              </button>
-              <button className="btn btn-primary" onClick={handleSolve} style={{ marginLeft: 'auto', padding: '10px 28px', fontSize: 14 }}>
-                Resolver
-              </button>
-            </div>
-
-            <div className="divider" />
-            <div className="sidebar-label" style={{ padding: 0, marginBottom: 8 }}>Ejemplos</div>
-            <div className="examples">
-              {GAUSS_EXAMPLES.map((ex, i) => (
-                <button className="example-card" key={i} onClick={() => { setEquations(ex.equations); setResult(null); setError('') }}>
-                  <div className="example-name">{ex.name}</div>
-                  <div className="example-meta">{ex.equations.length} ecuaciones</div>
+              <div className="module-landing-actions">
+                <button className="btn btn-ghost" onClick={addEq} style={{ fontSize: 13 }}>
+                  <IconAdd /> Agregar
                 </button>
-              ))}
+                <button className="btn btn-primary btn-go" onClick={handleSolve}>
+                  Resolver
+                </button>
+              </div>
+            </div>
+
+            <div className="module-landing-right">
+              <div className="module-landing-right-label">Ejemplos</div>
+              <div className="module-landing-examples">
+                {GAUSS_EXAMPLES.map((ex, i) => (
+                  <button className="example-pill" key={i} onClick={() => { setEquations(ex.equations); setResult(null); setError('') }}>
+                    <div className="example-pill-name">{ex.name}</div>
+                    <div className="example-pill-meta">{ex.equations.length} ec.</div>
+                  </button>
+                ))}
+              </div>
+              <div className="module-landing-hint">
+                Formato: <span className="kbd">3x + 2y - z = 10</span>
+              </div>
             </div>
           </div>
         </div>

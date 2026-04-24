@@ -75,52 +75,58 @@ export default function MatOpsPage() {
     <div className={`matops-page ${steps ? 'matops-page--presenting' : ''}`}>
 
       {!steps ? (
-        <div className="gauss-input-view">
-          <div className="gauss-input-card">
-            <div className="gauss-input-header">
-              <div>
-                <div className="module-eyebrow">Módulo · Operaciones Matriciales</div>
-                <h1 className="module-title">Matrices</h1>
-                <p className="module-desc">
-                  Suma, resta y multiplicación con desglose animado celda por celda.
-                </p>
-              </div>
-            </div>
+        <div className="module-landing">
+          <div className="module-landing-center">
+            <div className="module-landing-left">
+              <div className="module-eyebrow">Módulo · Operaciones Matriciales</div>
+              <h1 className="module-landing-title">Matrices</h1>
+              <p className="module-landing-desc">
+                Suma, resta y multiplicación con desglose animado celda por celda.
+              </p>
 
-            <div style={{ marginTop: 18 }}>
-              <h3 className="stage-panel-h">Operación</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 12 }}>
+              <div className="op-selector">
                 {OPS.map(o => (
-                  <button key={o.id} className="example-card"
-                    style={{ background: op === o.id ? 'var(--sage-tint)' : 'var(--bg)', borderColor: op === o.id ? 'oklch(0.48 0.045 145 / 0.35)' : 'var(--rule)' }}
+                  <button key={o.id} className={`op-pill${op === o.id ? ' op-pill--active' : ''}`}
                     onClick={() => setOp(o.id)}>
-                    <div className="example-name">{o.label}</div>
-                    <div className="example-meta">{o.sub}</div>
+                    <span className="op-pill-label">{o.label}</span>
+                    <span className="op-pill-sub">{o.sub}</span>
                   </button>
                 ))}
               </div>
-            </div>
 
-            <div style={{ marginTop: 18 }}>
-              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 12 }}>
-                <span style={{ fontSize: 12, color: 'var(--ink-faint)', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600 }}>Tamaño</span>
+              <div className="size-selector">
+                <span className="size-label">Dimensión</span>
                 {[2, 3, 4].map(n => (
-                  <button key={n}
-                    className={`btn btn-icon${size === n ? ' btn-primary' : ' btn-ghost'}`}
-                    style={{ width: 32, height: 32, fontSize: 13, border: '1px solid var(--rule)' }}
-                    onClick={() => updateSize(n)}>{n}</button>
+                  <button key={n} className={`size-btn${size === n ? ' size-btn--active' : ''}`}
+                    onClick={() => updateSize(n)}>{n}×{n}</button>
                 ))}
               </div>
+
               {error && <div className="error-banner">{error}</div>}
-              <MatrixGridInput label="A" size={size} values={A} onChange={setA} />
-              <div style={{ marginTop: 16 }}>
+
+              <div className="mat-pair">
+                <MatrixGridInput label="A" size={size} values={A} onChange={setA} />
                 <MatrixGridInput label="B" size={size} values={B} onChange={setB} />
+              </div>
+
+              <div className="module-landing-actions">
+                <button className="btn btn-primary btn-go" onClick={compute}>
+                  Calcular y animar
+                </button>
               </div>
             </div>
 
-            <button className="btn btn-primary" style={{ width: '100%', marginTop: 18, padding: '10px 28px', fontSize: 14 }} onClick={compute}>
-              Calcular y animar
-            </button>
+            <div className="module-landing-right">
+              <div className="module-landing-right-label">Operación</div>
+              <div className="op-display">
+                <span className="op-display-letter">A</span>
+                <span className="op-display-sym">{opSym}</span>
+                <span className="op-display-letter">B</span>
+              </div>
+              <div className="module-landing-hint">
+                {opInfo.label} — cada celda de C se calcula y resalta paso a paso.
+              </div>
+            </div>
           </div>
         </div>
       ) : (

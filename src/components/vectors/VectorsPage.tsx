@@ -92,61 +92,61 @@ export default function VectorsPage() {
     <div className={`vectors-page ${hasAnim ? 'vectors-page--presenting' : ''}`}>
 
       {!hasAnim ? (
-        <div className="gauss-input-view">
-          <div className="gauss-input-card">
-            <div className="gauss-input-header">
-              <div>
-                <div className="module-eyebrow">Módulo · Operaciones Vectoriales</div>
-                <h1 className="module-title">Vectores en el espacio</h1>
-                <p className="module-desc">
-                  Suma, resta, producto punto y cruz, norma y ángulo — visualización animada en 2D y 3D.
-                </p>
-              </div>
-            </div>
+        <div className="module-landing">
+          <div className="module-landing-center">
+            <div className="module-landing-left">
+              <div className="module-eyebrow">Módulo · Operaciones Vectoriales</div>
+              <h1 className="module-landing-title">Vectores</h1>
+              <p className="module-landing-desc">
+                Suma, resta, producto punto y cruz, norma y ángulo — visualización en 2D y 3D.
+              </p>
 
-            <div style={{ marginTop: 18 }}>
-              <h3 className="stage-panel-h">Operación</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 10 }}>
+              <div className="op-selector op-selector--cols2">
                 {OP_LABELS.map(o => (
-                  <button key={o.id} className="example-card"
-                    style={{ background: op === o.id ? 'var(--sage-tint)' : 'var(--bg)', borderColor: op === o.id ? 'oklch(0.48 0.045 145 / 0.35)' : 'var(--rule)' }}
+                  <button key={o.id} className={`op-pill${op === o.id ? ' op-pill--active' : ''}`}
                     onClick={() => { setOp(o.id); setSteps([]); setResult(null) }}>
-                    <div className="example-name">{o.label}</div>
-                    <div className="example-meta">{o.sub}</div>
+                    <span className="op-pill-label">{o.label}</span>
+                    <span className="op-pill-sub">{o.sub}</span>
                   </button>
                 ))}
               </div>
-            </div>
 
-            <div style={{ marginTop: 18 }}>
-              <VecInput label="a" value={vecA} onChange={setVecA} />
-              {meta.needsB && <div style={{ marginTop: 14 }}><VecInput label="b" value={vecB} onChange={setVecB} /></div>}
+              <div className="vec-pair">
+                <VecInput label="a" value={vecA} onChange={setVecA} />
+                {meta.needsB && <VecInput label="b" value={vecB} onChange={setVecB} />}
+              </div>
 
               {meta.needsScalar && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 14 }}>
+                <div className="scalar-row">
                   <span style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: 14, color: 'var(--ink)' }}>
                     Escalar <strong>k</strong>
                   </span>
                   <input className="input" type="number" value={scalar}
                     onChange={e => setScalar(parseFloat(e.target.value) || 0)}
-                    style={{ width: 90 }} />
+                    style={{ width: 80, textAlign: 'center' }} />
                 </div>
               )}
+
+              <div className="module-landing-actions">
+                <button className="btn btn-primary btn-go" onClick={compute}>
+                  Animar operación
+                </button>
+              </div>
             </div>
 
-            <button className="btn btn-primary" style={{ width: '100%', marginTop: 18, padding: '10px 28px', fontSize: 14 }} onClick={compute}>
-              Animar operación
-            </button>
-
-            <div className="divider" />
-            <div className="sidebar-label" style={{ padding: 0, marginBottom: 4 }}>Ejemplos</div>
-            <div className="examples">
-              {VECTOR_EXAMPLES.map(ex => (
-                <button key={ex.name} className="example-card"
-                  onClick={() => { setVecA(ex.a); setVecB(ex.b); setSteps([]); setResult(null) }}>
-                  <div className="example-name">{ex.name}</div>
-                </button>
-              ))}
+            <div className="module-landing-right">
+              <div className="module-landing-right-label">Ejemplos</div>
+              <div className="module-landing-examples">
+                {VECTOR_EXAMPLES.map(ex => (
+                  <button key={ex.name} className="example-pill"
+                    onClick={() => { setVecA(ex.a); setVecB(ex.b); setSteps([]); setResult(null) }}>
+                    <div className="example-pill-name">{ex.name}</div>
+                  </button>
+                ))}
+              </div>
+              <div className="module-landing-hint">
+                Arrastra para rotar la escena 3D · scroll para zoom
+              </div>
             </div>
           </div>
         </div>
