@@ -4,6 +4,7 @@ import { solve } from '../../engine/gauss'
 import { StepType, type Step } from '../../engine/types'
 import { fracDisplay } from '../../engine/matrix'
 import { GAUSS_EXAMPLES } from '../../engine/examples'
+import Frac from '../ui/Frac'
 
 const IconPlay   = () => <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M3 2 L11 7 L3 12 Z"/></svg>
 const IconPause  = () => <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="3" y="2" width="3" height="10" rx="0.5"/><rect x="8" y="2" width="3" height="10" rx="0.5"/></svg>
@@ -60,7 +61,7 @@ function MatrixDisplay({ matrix, nVars, highlight, changedCells }: {
           const cls = cellClass(highlight, i, j, nVars, j === nVars)
           return (
             <div key={`${i}-${j}-${val}`} className={changedCells.has(`${i}-${j}`) ? cls + ' changed' : cls}>
-              {fracDisplay(val)}
+              <Frac n={val} />
             </div>
           )
         }))}
@@ -213,7 +214,7 @@ export default function GaussPage() {
             <div className="gauss-cinema-solution">
               {result.variables.map((v, i) => (
                 <span key={v}>
-                  <em>{v}</em> = <strong>{fracDisplay(finalStep.solution[i] ?? 0)}</strong>
+                  <em>{v}</em> = <strong><Frac n={finalStep.solution[i] ?? 0} /></strong>
                 </span>
               ))}
             </div>

@@ -139,7 +139,7 @@ export default function VectorsPage() {
               <div className="module-landing-examples">
                 {VECTOR_EXAMPLES.map(ex => (
                   <button key={ex.name} className="example-pill"
-                    onClick={() => { setVecA(ex.a); setVecB(ex.b); setSteps([]); setResult(null) }}>
+                    onClick={() => { setOp(ex.op); setVecA(ex.a); setVecB(ex.b); setSteps([]); setResult(null) }}>
                     <div className="example-pill-name">{ex.name}</div>
                   </button>
                 ))}

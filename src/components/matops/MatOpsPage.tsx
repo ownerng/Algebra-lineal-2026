@@ -3,6 +3,7 @@ import { MatOpKind, MatOpType, type MatOpsStep } from '../../engine/types'
 import { matAdd, matSub, matMul } from '../../engine/matrixOps'
 import { fracDisplay } from '../../engine/matrix'
 import MatrixGridInput from './MatrixGridInput'
+import Frac from '../ui/Frac'
 
 const IconPlay  = () => <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M3 2 L11 7 L3 12 Z"/></svg>
 const IconPause = () => <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="3" y="2" width="3" height="10" rx="0.5"/><rect x="8" y="2" width="3" height="10" rx="0.5"/></svg>
@@ -11,6 +12,8 @@ const IconNext  = () => <svg width="14" height="14" viewBox="0 0 14 14" fill="cu
 const IconReset = () => <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"><path d="M2.5 7 a4.5 4.5 0 1 0 1.5-3.4"/><polyline points="2,2 2,4.5 4.5,4.5"/></svg>
 const IconBack  = () => <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><line x1="12" y1="7" x2="3" y2="7"/><polyline points="6,4 3,7 6,10"/></svg>
 const IconList  = () => <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"><line x1="4" y1="3.5" x2="12" y2="3.5"/><line x1="4" y1="7" x2="12" y2="7"/><line x1="4" y1="10.5" x2="12" y2="10.5"/><circle cx="2" cy="3.5" r="0.7" fill="currentColor"/><circle cx="2" cy="7" r="0.7" fill="currentColor"/><circle cx="2" cy="10.5" r="0.7" fill="currentColor"/></svg>
+
+const IconDice  = () => <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="1" y="1" width="12" height="12" rx="2.5" fill="none" stroke="currentColor" strokeWidth="1.3"/><circle cx="4.5" cy="4.5" r="1"/><circle cx="9.5" cy="4.5" r="1"/><circle cx="7" cy="7" r="1"/><circle cx="4.5" cy="9.5" r="1"/><circle cx="9.5" cy="9.5" r="1"/></svg>
 
 const makeId = (n: number): number[][] => Array.from({ length: n }, (_, i) => Array.from({ length: n }, (_, j) => i === j ? 1 : 0))
 
@@ -29,7 +32,7 @@ function SmallMatrix({ data, highlight }: { data: number[][]; highlight?: { row:
       <div className="matrix" style={{ gridTemplateColumns: `repeat(${ncols}, auto)` }}>
         {data.map((row, i) => row.map((val, j) => (
           <div key={`${i}-${j}`} className={`matrix-cell sm${highlight?.row === i && highlight?.col === j ? ' hl-pivot changed' : ''}`}>
-            {fracDisplay(val)}
+            <Frac n={val} />
           </div>
         )))}
       </div>
@@ -51,6 +54,22 @@ export default function MatOpsPage() {
   const timerRef                = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const updateSize = (n: number) => { setSize(n); setA(makeId(n)); setB(makeId(n)); setSteps(null) }
+
+  const randomize = useCallback(() => {
+    const rand = () => {
+      const r = Math.random()
+      if (r < 0.35) {
+        const denoms = [2, 3, 4, 5, 6]
+        const d = denoms[Math.floor(Math.random() * denoms.length)]
+        const n = Math.floor(Math.random() * (2 * d + 1)) - d
+        return n / d
+      }
+      return Math.floor(Math.random() * 19) - 9
+    }
+    const rA = Array.from({ length: size }, () => Array.from({ length: size }, () => rand()))
+    const rB = Array.from({ length: size }, () => Array.from({ length: size }, () => rand()))
+    setA(rA); setB(rB); setSteps(null)
+  }, [size])
 
   const compute = useCallback(() => {
     setError('')
@@ -100,6 +119,9 @@ export default function MatOpsPage() {
                   <button key={n} className={`size-btn${size === n ? ' size-btn--active' : ''}`}
                     onClick={() => updateSize(n)}>{n}×{n}</button>
                 ))}
+                <button className="btn btn-ghost" onClick={randomize} style={{ marginLeft: 8, gap: 6, fontSize: 12.5, padding: '5px 12px' }}>
+                  <IconDice /> Aleatorio
+                </button>
               </div>
 
               {error && <div className="error-banner">{error}</div>}
