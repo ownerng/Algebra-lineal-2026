@@ -161,14 +161,10 @@ export default function VectorsPage() {
 
           {/* ── 2D/3D toggle floating top-right ── */}
           <div className="vectors-view-toggle">
-            <button className={`gauss-btn${view === '2d' ? ' gauss-btn--active' : ''}`}
-              onClick={() => setView('2d')} title="Vista 2D">
-              <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>2D</span>
-            </button>
-            <button className={`gauss-btn${view === '3d' ? ' gauss-btn--active' : ''}`}
-              onClick={() => setView('3d')} title="Vista 3D">
-              <span style={{ fontSize: 11, fontFamily: 'var(--font-mono)', fontWeight: 700 }}>3D</span>
-            </button>
+            <button className={`view-toggle-btn${view === '2d' ? ' view-toggle-btn--active' : ''}`}
+              onClick={() => setView('2d')}>2D</button>
+            <button className={`view-toggle-btn${view === '3d' ? ' view-toggle-btn--active' : ''}`}
+              onClick={() => setView('3d')}>3D</button>
           </div>
 
           {/* ── Floating step info top-left ── */}

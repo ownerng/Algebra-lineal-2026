@@ -56,7 +56,7 @@ function Arrow({ ox, oy, tx, ty, color, label, opacity = 1, dashed = false }: Ar
           x={midX} y={midY}
           fontSize="14" fontFamily="Georgia, serif" fontStyle="italic"
           fill={color} textAnchor="middle" dominantBaseline="middle"
-          style={{ filter: 'drop-shadow(0 0 3px #0E0E0F)' }}
+          style={{ filter: 'drop-shadow(0 0 3px #00000040)' }}
         >
           {label}
         </text>
@@ -101,9 +101,9 @@ export default function Vector2DScene({
   const svgX = (x: number) => cx + x * scale
   const svgY = (y: number) => cy - y * scale
 
-  const colorA = highlightA ? '#5B8AF0' : '#3A5FAD'
-  const colorB = highlightB ? '#3DAA72' : '#2A7A52'
-  const colorR = '#D4884A'
+  const colorA = highlightA ? '#4A7AE6' : '#3A5FAD'
+  const colorB = highlightB ? '#2E9E68' : '#2A7A52'
+  const colorR = '#C87A3A'
 
   const origin: [number, number] = [cx, cy]
   const pA: [number, number] = [svgX(vecA[0]), svgY(vecA[1])]
@@ -113,30 +113,30 @@ export default function Vector2DScene({
   return (
     <svg
       viewBox={`0 0 ${W} ${H}`}
-      style={{ width: '100%', height: '100%', background: '#0E0E0F', borderRadius: 8, display: 'block' }}
+      style={{ width: '100%', height: '100%', background: 'var(--bg-sunken)', borderRadius: 8, display: 'block' }}
     >
       {/* Grid lines */}
       {ticks.map(t => (
         <g key={t}>
-          <line x1={svgX(t)} y1={0} x2={svgX(t)} y2={H} stroke="#1E1E28" strokeWidth="1" />
-          <line x1={0} y1={svgY(t)} x2={W} y2={svgY(t)} stroke="#1E1E28" strokeWidth="1" />
+          <line x1={svgX(t)} y1={0} x2={svgX(t)} y2={H} stroke="#C8C8CC" strokeWidth="1" />
+          <line x1={0} y1={svgY(t)} x2={W} y2={svgY(t)} stroke="#C8C8CC" strokeWidth="1" />
         </g>
       ))}
 
       {/* Axes */}
-      <line x1={0} y1={cy} x2={W} y2={cy} stroke="#3A3A4C" strokeWidth="1.5" />
-      <line x1={cx} y1={0} x2={cx} y2={H} stroke="#3A3A4C" strokeWidth="1.5" />
+      <line x1={0} y1={cy} x2={W} y2={cy} stroke="#8A8A94" strokeWidth="1.5" />
+      <line x1={cx} y1={0} x2={cx} y2={H} stroke="#8A8A94" strokeWidth="1.5" />
 
       {/* Tick marks + labels */}
       {ticks.map(t => (
         <g key={t}>
-          <line x1={svgX(t)} y1={cy - 4} x2={svgX(t)} y2={cy + 4} stroke="#3A3A4C" strokeWidth="1" />
-          <line x1={cx - 4} y1={svgY(t)} x2={cx + 4} y2={svgY(t)} stroke="#3A3A4C" strokeWidth="1" />
+          <line x1={svgX(t)} y1={cy - 4} x2={svgX(t)} y2={cy + 4} stroke="#8A8A94" strokeWidth="1" />
+          <line x1={cx - 4} y1={svgY(t)} x2={cx + 4} y2={svgY(t)} stroke="#8A8A94" strokeWidth="1" />
           {Math.abs(svgX(t) - cx) > 8 && (
-            <text x={svgX(t)} y={cy + 14} fontSize="9" fill="#4A4A5A" textAnchor="middle">{t}</text>
+            <text x={svgX(t)} y={cy + 14} fontSize="9" fill="#7A7A8A" textAnchor="middle">{t}</text>
           )}
           {Math.abs(svgY(t) - cy) > 8 && (
-            <text x={cx - 8} y={svgY(t)} fontSize="9" fill="#4A4A5A" textAnchor="end" dominantBaseline="middle">{t}</text>
+            <text x={cx - 8} y={svgY(t)} fontSize="9" fill="#7A7A8A" textAnchor="end" dominantBaseline="middle">{t}</text>
           )}
         </g>
       ))}
@@ -149,7 +149,7 @@ export default function Vector2DScene({
       {op === VecOpKind.Add && pR && highlightResult && (
         <polygon
           points={`${origin[0]},${origin[1]} ${pA[0]},${pA[1]} ${pR[0]},${pR[1]} ${pB[0]},${pB[1]}`}
-          fill="none" stroke="#333345" strokeWidth="1" strokeDasharray="5,4"
+          fill="none" stroke="#AAAAAA" strokeWidth="1" strokeDasharray="5,4"
         />
       )}
 
@@ -180,11 +180,11 @@ export default function Vector2DScene({
       )}
 
       {/* Origin dot */}
-      <circle cx={cx} cy={cy} r="3.5" fill="#5A5A6A" />
+      <circle cx={cx} cy={cy} r="3.5" fill="#7A7A8A" />
 
       {/* Z-component warning if non-zero */}
       {vecA[2] !== 0 && (
-        <text x={W / 2} y={H - 8} fontSize="10" fill="#555568" textAnchor="middle">
+        <text x={W / 2} y={H - 8} fontSize="10" fill="#7A7A8A" textAnchor="middle">
           z ignorada en vista 2D
         </text>
       )}

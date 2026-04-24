@@ -59,7 +59,7 @@ function Arrow({ from = [0, 0, 0], to, color, label, opacity = 1, animate = fals
           anchorX="center"
           anchorY="middle"
           outlineWidth={0.015}
-          outlineColor="#0E0E0F"
+          outlineColor="#00000040"
         >
           {label}
         </Text>
@@ -71,9 +71,9 @@ function Arrow({ from = [0, 0, 0], to, color, label, opacity = 1, animate = fals
 function AxisLabels() {
   return (
     <>
-      <Text position={[3.4, 0, 0]} fontSize={0.22} color="#6B6B7A" anchorX="center">x</Text>
-      <Text position={[0, 3.4, 0]} fontSize={0.22} color="#6B6B7A" anchorX="center">y</Text>
-      <Text position={[0, 0, 3.4]} fontSize={0.22} color="#6B6B7A" anchorX="center">z</Text>
+      <Text position={[3.4, 0, 0]} fontSize={0.22} color="#8B8B9A" anchorX="center">x</Text>
+      <Text position={[0, 3.4, 0]} fontSize={0.22} color="#8B8B9A" anchorX="center">y</Text>
+      <Text position={[0, 0, 3.4]} fontSize={0.22} color="#8B8B9A" anchorX="center">z</Text>
     </>
   )
 }
@@ -84,9 +84,9 @@ function Axes() {
 
   return (
     <>
-      <Line points={pts([-3, 0, 0], [3, 0, 0])} color="#2A2A2F" lineWidth={1} />
-      <Line points={pts([0, -3, 0], [0, 3, 0])} color="#2A2A2F" lineWidth={1} />
-      <Line points={pts([0, 0, -3], [0, 0, 3])} color="#2A2A2F" lineWidth={1} />
+      <Line points={pts([-3, 0, 0], [3, 0, 0])} color="#AAAAAA" lineWidth={1} />
+      <Line points={pts([0, -3, 0], [0, 3, 0])} color="#AAAAAA" lineWidth={1} />
+      <Line points={pts([0, 0, -3], [0, 0, 3])} color="#AAAAAA" lineWidth={1} />
       <AxisLabels />
     </>
   )
@@ -123,7 +123,7 @@ function SceneContent({ vecA, vecB, result, op, highlightA, highlightB, highligh
     <>
       <ambientLight intensity={0.6} />
       <pointLight position={[5, 8, 5]} intensity={1} />
-      <pointLight position={[-5, -4, -5]} intensity={0.3} color="#5B8AF0" />
+      <pointLight position={[-5, -4, -5]} intensity={0.15} color="#5B8AF0" />
 
       <Axes />
 
@@ -161,7 +161,7 @@ function SceneContent({ vecA, vecB, result, op, highlightA, highlightB, highligh
       {parallelogramPts && (op === VecOpKind.Add) && showResult && (
         <Line
           points={parallelogramPts}
-          color="#2A2A2F"
+          color="#AAAAAA"
           lineWidth={1}
           dashed
           dashScale={5}
@@ -196,7 +196,7 @@ export default function Vector3DScene({ vecA, vecB, result, op, highlightA = tru
   return (
     <Canvas
       camera={{ position: [4, 3, 4], fov: 50 }}
-      style={{ background: '#0E0E0F', borderRadius: '12px' }}
+      style={{ background: 'var(--bg-sunken)', borderRadius: '12px' }}
       gl={{ antialias: true, alpha: false }}
     >
       <SceneContent

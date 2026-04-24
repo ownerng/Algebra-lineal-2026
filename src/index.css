@@ -861,7 +861,7 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   border-color: oklch(0.48 0.045 145 / 0.22);
 }
 .step-item.done { opacity: 0.45; }
-.step-item.future { opacity: 0.22; pointer-events: none; }
+.step-item.future { opacity: 0.35; }
 .step-num {
   width: 18px; height: 18px;
   border-radius: 50%;
@@ -1466,13 +1466,31 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   right: 28px;
   z-index: 10;
   display: flex;
-  gap: 4px;
+  gap: 0;
+  background: var(--bg-elev);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
 }
-.gauss-btn--active {
-  background: var(--sage) !important;
-  border-color: var(--sage) !important;
-  color: var(--bg-elev) !important;
+.view-toggle-btn {
+  padding: 7px 16px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-faint);
+  letter-spacing: 0.04em;
+  transition: background 140ms, color 140ms;
 }
+.view-toggle-btn:hover { background: var(--bg-sunken); color: var(--ink); }
+.view-toggle-btn--active {
+  background: var(--sage);
+  color: var(--bg-elev);
+}
+[data-theme='dark'] .view-toggle-btn--active { color: oklch(0.18 0.012 140); }
 
 /* ─── Responsive ─────────────────────────────────────────────────────────── */
 @media (max-width: 1100px) {
