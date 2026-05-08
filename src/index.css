@@ -719,6 +719,15 @@ button, input, textarea, select { font-family: inherit; color: inherit; }
   color: oklch(0.32 0.12 35);
 }
 [data-theme='dark'] .matrix-cell.hl-target { color: oklch(0.92 0.10 35); }
+.matrix-cell.hl-operand-b {
+  background: var(--terra-soft);
+  color: oklch(0.32 0.12 35);
+  font-weight: 500;
+}
+[data-theme='dark'] .matrix-cell.hl-operand-b {
+  background: oklch(0.22 0.06 35);
+  color: oklch(0.82 0.08 35);
+}
 .matrix-cell.hl-source {
   background: oklch(0.48 0.045 145 / 0.18);
   outline: 1px dashed var(--sage);
@@ -1316,6 +1325,22 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   max-width: 600px;
   line-height: 1.4;
 }
+
+.cinema-formula-panel {
+  margin-top: 8px;
+  padding: 5px 10px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink-soft);
+  background: var(--bg-elev);
+  border: 1px solid var(--rule-soft);
+  border-radius: var(--r-sm);
+  max-width: 480px;
+  line-height: 1.6;
+}
+.cinema-formula-panel .fp-a      { color: var(--amber);     font-weight: 600; }
+.cinema-formula-panel .fp-b      { color: var(--terra);     font-weight: 600; }
+.cinema-formula-panel .fp-result { color: var(--sage-deep); font-weight: 600; }
 
 .gauss-cinema-solution {
   position: absolute;

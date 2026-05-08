@@ -23,22 +23,92 @@ const OPS = [
   { id: MatOpKind.Mul, label: 'Multiplicación', sub: 'A × B' },
 ]
 
-function SmallMatrix({ data, highlight }: { data: number[][]; highlight?: { row: number; col: number } }) {
+type CellHL =
+  | { kind: 'cell'; row: number; col: number }
+  | { kind: 'row';  row: number }
+  | { kind: 'col';  col: number }
+
+function matchHL(hl: CellHL | undefined, i: number, j: number): boolean {
+  if (!hl) return false
+  if (hl.kind === 'cell') return hl.row === i && hl.col === j
+  if (hl.kind === 'row')  return hl.row === i
+  if (hl.kind === 'col')  return hl.col === j
+  return false
+}
+
+function SmallMatrix({ data, hlA, hlB }: { data: number[][]; hlA?: CellHL; hlB?: CellHL }) {
   if (!data?.length) return null
   const ncols = data[0].length
   return (
     <div className="matrix-wrap">
       <div className="matrix-paren left" />
       <div className="matrix" style={{ gridTemplateColumns: `repeat(${ncols}, auto)` }}>
-        {data.map((row, i) => row.map((val, j) => (
-          <div key={`${i}-${j}`} className={`matrix-cell sm${highlight?.row === i && highlight?.col === j ? ' hl-pivot changed' : ''}`}>
-            <Frac n={val} />
-          </div>
-        )))}
+        {data.map((row, i) => row.map((val, j) => {
+          const isA = matchHL(hlA, i, j)
+          const isB = !isA && matchHL(hlB, i, j)
+          const extra = isA ? ' hl-pivot changed' : isB ? ' hl-operand-b changed' : ''
+          return (
+            <div key={`${i}-${j}`} className={`matrix-cell sm${extra}`}>
+              <Frac n={val} />
+            </div>
+          )
+        }))}
       </div>
       <div className="matrix-paren right" />
     </div>
   )
+}
+
+function deriveHL(s: MatOpsStep): { hA?: CellHL; hB?: CellHL; hC?: CellHL } {
+  switch (s.type) {
+    case MatOpType.HighlightCell:
+      return {
+        hA: { kind: 'cell', row: s.aRow, col: s.aCol },
+        hB: { kind: 'cell', row: s.bRow, col: s.bCol },
+      }
+    case MatOpType.SetResult:
+      return {
+        hA: { kind: 'cell', row: s.aRow, col: s.aCol },
+        hB: { kind: 'cell', row: s.bRow, col: s.bCol },
+        hC: { kind: 'cell', row: s.row,  col: s.col  },
+      }
+    case MatOpType.HighlightRowCol:
+      return {
+        hA: { kind: 'row', row: s.aRow },
+        hB: { kind: 'col', col: s.bCol },
+      }
+    case MatOpType.SetResultMul:
+      return {
+        hA: { kind: 'row', row: s.aRow },
+        hB: { kind: 'col', col: s.bCol },
+        hC: { kind: 'cell', row: s.row, col: s.col },
+      }
+    default:
+      return {}
+  }
+}
+
+function buildFormula(s: MatOpsStep, A: number[][], B: number[][]): { html: string } | null {
+  const fd = (n: number) => fracDisplay(n)
+  const sym = s.op === MatOpKind.Add ? '+' : s.op === MatOpKind.Sub ? '−' : '×'
+  const aVal = A[s.aRow]?.[s.aCol]
+  const bVal = B[s.bRow]?.[s.bCol]
+
+  if (s.type === MatOpType.HighlightCell) {
+    return { html: `<span class="fp-a">${fd(aVal)}</span> ${sym} <span class="fp-b">${fd(bVal)}</span> = ?` }
+  }
+  if (s.type === MatOpType.SetResult) {
+    const res = s.snapC[s.row]?.[s.col]
+    return { html: `<span class="fp-a">${fd(aVal)}</span> ${sym} <span class="fp-b">${fd(bVal)}</span> = <span class="fp-result">${fd(res)}</span>` }
+  }
+  if (s.type === MatOpType.HighlightRowCol) {
+    return { html: `C[${s.row+1}][${s.col+1}] = fila ${s.aRow+1} de A · col ${s.bCol+1} de B` }
+  }
+  if (s.type === MatOpType.SetResultMul) {
+    const res = s.snapC[s.row]?.[s.col]
+    return { html: `C[${s.row+1}][${s.col+1}] = <span class="fp-result">${fd(res)}</span>` }
+  }
+  return null
 }
 
 export default function MatOpsPage() {
@@ -154,24 +224,29 @@ export default function MatOpsPage() {
       ) : (
         <div className="gauss-cinema">
           {/* ── Full-screen matrices ── */}
-          <div className="gauss-matrix-stage">
-            <div className="cinema-matops-display">
-              <div className="cinema-matops-col">
-                <span className="cinema-matops-label">A</span>
-                <SmallMatrix data={A} />
+          {(() => {
+            const { hA, hB, hC } = step ? deriveHL(step) : {}
+            return (
+              <div className="gauss-matrix-stage">
+                <div className="cinema-matops-display">
+                  <div className="cinema-matops-col">
+                    <span className="cinema-matops-label">A</span>
+                    <SmallMatrix data={A} hlA={hA} />
+                  </div>
+                  <span className="cinema-matops-op">{opSym}</span>
+                  <div className="cinema-matops-col">
+                    <span className="cinema-matops-label">B</span>
+                    <SmallMatrix data={B} hlB={hB} />
+                  </div>
+                  <span className="cinema-matops-op">=</span>
+                  <div className="cinema-matops-col">
+                    <span className="cinema-matops-label">C</span>
+                    <SmallMatrix data={step?.snapC ?? []} hlA={hC} />
+                  </div>
+                </div>
               </div>
-              <span className="cinema-matops-op">{opSym}</span>
-              <div className="cinema-matops-col">
-                <span className="cinema-matops-label">B</span>
-                <SmallMatrix data={B} />
-              </div>
-              <span className="cinema-matops-op">=</span>
-              <div className="cinema-matops-col">
-                <span className="cinema-matops-label">C</span>
-                <SmallMatrix data={step?.snapC ?? []} highlight={step ? { row: step.row, col: step.col } : undefined} />
-              </div>
-            </div>
-          </div>
+            )
+          })()}
 
           {/* ── Floating step info top-left ── */}
           <div className="gauss-cinema-info">
@@ -186,6 +261,12 @@ export default function MatOpsPage() {
                 {step.reason}
               </div>
             )}
+            {step && (() => {
+              const f = buildFormula(step, A, B)
+              return f ? (
+                <div className="cinema-formula-panel" dangerouslySetInnerHTML={{ __html: f.html }} />
+              ) : null
+            })()}
           </div>
 
           {/* ── Complete banner ── */}
