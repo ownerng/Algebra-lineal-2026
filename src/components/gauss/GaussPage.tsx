@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { parse } from '../../engine/parser'
 import { solve } from '../../engine/gauss'
 import { StepType, type Step } from '../../engine/types'
-import { fracDisplay } from '../../engine/matrix'
 import { GAUSS_EXAMPLES } from '../../engine/examples'
 import Frac from '../ui/Frac'
 
@@ -34,7 +33,7 @@ function getHighlight(step: Step): Highlight {
   }
 }
 
-function cellClass(hl: Highlight, row: number, col: number, nVars: number, isAug: boolean): string {
+function cellClass(hl: Highlight, row: number, col: number, _nVars: number, isAug: boolean): string {
   const cls = ['matrix-cell']
   if (isAug) cls.push('augment-divider')
   const { pivotRow, pivotCol, targetRow, sourceRow, rows } = hl

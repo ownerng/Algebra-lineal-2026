@@ -1,6 +1,6 @@
 import { useRef, useMemo } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { OrbitControls, Grid, Line, Text } from '@react-three/drei'
+import { OrbitControls, Line, Text } from '@react-three/drei'
 import * as THREE from 'three'
 import { VecOpKind } from '../../engine/types'
 
@@ -15,7 +15,7 @@ interface ArrowProps {
   animate?: boolean
 }
 
-function Arrow({ from = [0, 0, 0], to, color, label, opacity = 1, animate = false }: ArrowProps) {
+function Arrow({ from = [0, 0, 0], to, color, label, opacity: _opacity = 1, animate = false }: ArrowProps) {
   const groupRef = useRef<THREE.Group>(null)
   const dir = new THREE.Vector3(to[0] - from[0], to[1] - from[1], to[2] - from[2])
   const length = dir.length()
@@ -79,7 +79,6 @@ function AxisLabels() {
 }
 
 function Axes() {
-  const mat = new THREE.LineBasicMaterial({ color: '#2A2A2F', transparent: true, opacity: 0.8 })
   const pts = (a: V3, b: V3) => [new THREE.Vector3(...a), new THREE.Vector3(...b)]
 
   return (
