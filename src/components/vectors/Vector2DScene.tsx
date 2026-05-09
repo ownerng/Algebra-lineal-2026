@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useRef, useState, useEffect } from 'react'
 import { VecOpKind } from '../../engine/types'
 
 type V3 = [number, number, number]
@@ -78,6 +78,47 @@ export default function Vector2DScene({
   const cy = H / 2
   const PAD = 44
 
+  // Zoom & pan state
+  const [zoom, setZoom] = useState(1)
+  const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 })
+  const dragging = useRef(false)
+  const lastPtr = useRef({ x: 0, y: 0 })
+  const svgRef = useRef<SVGSVGElement>(null)
+
+  // Non-passive wheel listener so we can preventDefault
+  useEffect(() => {
+    const el = svgRef.current
+    if (!el) return
+    const handler = (e: WheelEvent) => {
+      e.preventDefault()
+      const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15
+      setZoom(z => Math.max(0.2, Math.min(12, z * factor)))
+    }
+    el.addEventListener('wheel', handler, { passive: false })
+    return () => el.removeEventListener('wheel', handler)
+  }, [])
+
+  const onPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
+    dragging.current = true
+    lastPtr.current = { x: e.clientX, y: e.clientY }
+    ;(e.currentTarget as Element).setPointerCapture(e.pointerId)
+  }
+
+  const onPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (!dragging.current) return
+    const rect = (e.currentTarget as SVGSVGElement).getBoundingClientRect()
+    const rx = W / rect.width
+    const ry = H / rect.height
+    const dx = (e.clientX - lastPtr.current.x) * rx
+    const dy = (e.clientY - lastPtr.current.y) * ry
+    setPan(p => ({ x: p.x + dx, y: p.y + dy }))
+    lastPtr.current = { x: e.clientX, y: e.clientY }
+  }
+
+  const onPointerUp = () => { dragging.current = false }
+
+  const onDoubleClick = () => { setZoom(1); setPan({ x: 0, y: 0 }) }
+
   const showB = vecB.some(v => v !== 0) && op !== VecOpKind.Scale && op !== VecOpKind.Normalize
 
   const { scale, ticks } = useMemo(() => {
@@ -113,130 +154,149 @@ export default function Vector2DScene({
   const pB: [number, number] = [svgX(vecB[0]), svgY(vecB[1])]
   const pR: [number, number] | null = result ? [svgX(result[0]), svgY(result[1])] : null
 
+  // Transform: zoom around center, then pan
+  const gTransform = `translate(${pan.x} ${pan.y}) translate(${cx} ${cy}) scale(${zoom}) translate(${-cx} ${-cy})`
+
   return (
     <svg
+      ref={svgRef}
       viewBox={`0 0 ${W} ${H}`}
-      style={{ width: '100%', height: '100%', background: 'var(--bg-sunken)', borderRadius: 8, display: 'block' }}
+      style={{
+        width: '100%', height: '100%',
+        background: 'var(--bg-sunken)', borderRadius: 8, display: 'block',
+        cursor: 'grab', userSelect: 'none',
+      }}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerLeave={onPointerUp}
+      onDoubleClick={onDoubleClick}
     >
-      {/* Grid lines */}
-      {ticks.map(t => (
-        <g key={t}>
-          <line x1={svgX(t)} y1={0} x2={svgX(t)} y2={H} stroke="#C8C8CC" strokeWidth="1" />
-          <line x1={0} y1={svgY(t)} x2={W} y2={svgY(t)} stroke="#C8C8CC" strokeWidth="1" />
-        </g>
-      ))}
-
-      {/* Axes */}
-      <line x1={0} y1={cy} x2={W} y2={cy} stroke="#8A8A94" strokeWidth="1.5" />
-      <line x1={cx} y1={0} x2={cx} y2={H} stroke="#8A8A94" strokeWidth="1.5" />
-
-      {/* Tick marks + labels */}
-      {ticks.map(t => (
-        <g key={t}>
-          <line x1={svgX(t)} y1={cy - 4} x2={svgX(t)} y2={cy + 4} stroke="#8A8A94" strokeWidth="1" />
-          <line x1={cx - 4} y1={svgY(t)} x2={cx + 4} y2={svgY(t)} stroke="#8A8A94" strokeWidth="1" />
-          {Math.abs(svgX(t) - cx) > 8 && (
-            <text x={svgX(t)} y={cy + 14} fontSize="9" fill="#7A7A8A" textAnchor="middle">{t}</text>
-          )}
-          {Math.abs(svgY(t) - cy) > 8 && (
-            <text x={cx - 8} y={svgY(t)} fontSize="9" fill="#7A7A8A" textAnchor="end" dominantBaseline="middle">{t}</text>
-          )}
-        </g>
-      ))}
-
-      {/* Axis labels */}
-      <text x={W - 10} y={cy + 16} fontSize="13" fill="#6B6B7A" fontFamily="Georgia, serif" fontStyle="italic" textAnchor="end">x</text>
-      <text x={cx + 8} y={10} fontSize="13" fill="#6B6B7A" fontFamily="Georgia, serif" fontStyle="italic">y</text>
-
-      {/* Parallelogram for Add */}
-      {op === VecOpKind.Add && pR && highlightResult && (
-        <polygon
-          points={`${origin[0]},${origin[1]} ${pA[0]},${pA[1]} ${pR[0]},${pR[1]} ${pB[0]},${pB[1]}`}
-          fill="none" stroke="#AAAAAA" strokeWidth="1" strokeDasharray="5,4"
-        />
-      )}
-
-      {/* Ghost of A from tip of B for Add/Sub */}
-      {(op === VecOpKind.Add || op === VecOpKind.Sub) && pR && highlightResult && (
-        <Arrow
-          ox={pB[0]} oy={pB[1]}
-          tx={pB[0] + (pA[0] - origin[0])} ty={pB[1] + (pA[1] - origin[1])}
-          color={colorA} opacity={0.28} dashed
-        />
-      )}
-
-      {/* Vector A */}
-      {vecA.some(v => v !== 0) && (
-        <Arrow ox={origin[0]} oy={origin[1]} tx={pA[0]} ty={pA[1]}
-          color={colorA} label="a" opacity={highlightA ? 1 : 0.5} />
-      )}
-
-      {/* Vector B */}
-      {showB && (
-        <Arrow ox={origin[0]} oy={origin[1]} tx={pB[0]} ty={pB[1]}
-          color={colorB} label="b" opacity={highlightB ? 1 : 0.5} />
-      )}
-
-      {/* Result */}
-      {pR && highlightResult && (
-        <Arrow ox={origin[0]} oy={origin[1]} tx={pR[0]} ty={pR[1]} color={colorR} label="r" />
-      )}
-
-      {/* Angle arc for Dot product */}
-      {showAngleArc && vecA.some(v => v !== 0) && vecB.some(v => v !== 0) && (() => {
-        const magA_px = Math.sqrt((pA[0] - cx) ** 2 + (pA[1] - cy) ** 2)
-        const magB_px = Math.sqrt((pB[0] - cx) ** 2 + (pB[1] - cy) ** 2)
-        const arcR = Math.max(18, Math.min(45, Math.min(magA_px, magB_px) * 0.35))
-
-        const startAngle = Math.atan2(-vecA[1], vecA[0])
-        const endAngle   = Math.atan2(-vecB[1], vecB[0])
-        let delta = endAngle - startAngle
-        while (delta >  Math.PI) delta -= 2 * Math.PI
-        while (delta < -Math.PI) delta += 2 * Math.PI
-
-        const sweep = delta > 0 ? 1 : 0
-        const sx = cx + arcR * Math.cos(startAngle)
-        const sy = cy + arcR * Math.sin(startAngle)
-        const ex = cx + arcR * Math.cos(endAngle)
-        const ey = cy + arcR * Math.sin(endAngle)
-
-        const midAngle = startAngle + delta / 2
-        const lblR = arcR + 14
-        const lx = cx + lblR * Math.cos(midAngle)
-        const ly = cy + lblR * Math.sin(midAngle)
-
-        return (
-          <g key={arcKey}>
-            <path
-              d={`M ${sx} ${sy} A ${arcR} ${arcR} 0 0 ${sweep} ${ex} ${ey}`}
-              fill="none"
-              stroke="#E0A020"
-              strokeWidth="2"
-              pathLength="1"
-              strokeDasharray="1"
-              style={{ strokeDashoffset: 1, animation: 'drawArc 0.8s ease-out forwards' } as React.CSSProperties}
-            />
-            <text
-              x={lx} y={ly}
-              fontSize="13" fontFamily="Georgia, serif" fontStyle="italic"
-              fill="#E0A020" textAnchor="middle" dominantBaseline="middle"
-              style={{ opacity: 0, animation: 'fadeIn 0.4s ease 0.7s forwards' } as React.CSSProperties}
-            >
-              θ
-            </text>
+      {/* All zoomable/pannable content */}
+      <g transform={gTransform}>
+        {/* Grid lines */}
+        {ticks.map(t => (
+          <g key={t}>
+            <line x1={svgX(t)} y1={0} x2={svgX(t)} y2={H} stroke="#C8C8CC" strokeWidth="1" />
+            <line x1={0} y1={svgY(t)} x2={W} y2={svgY(t)} stroke="#C8C8CC" strokeWidth="1" />
           </g>
-        )
-      })()}
+        ))}
 
-      {/* Origin dot */}
-      <circle cx={cx} cy={cy} r="3.5" fill="#7A7A8A" />
+        {/* Axes */}
+        <line x1={0} y1={cy} x2={W} y2={cy} stroke="#8A8A94" strokeWidth="1.5" />
+        <line x1={cx} y1={0} x2={cx} y2={H} stroke="#8A8A94" strokeWidth="1.5" />
 
-      {/* Z-component warning if non-zero */}
+        {/* Tick marks + labels */}
+        {ticks.map(t => (
+          <g key={t}>
+            <line x1={svgX(t)} y1={cy - 4} x2={svgX(t)} y2={cy + 4} stroke="#8A8A94" strokeWidth="1" />
+            <line x1={cx - 4} y1={svgY(t)} x2={cx + 4} y2={svgY(t)} stroke="#8A8A94" strokeWidth="1" />
+            {Math.abs(svgX(t) - cx) > 8 && (
+              <text x={svgX(t)} y={cy + 14} fontSize="9" fill="#7A7A8A" textAnchor="middle">{t}</text>
+            )}
+            {Math.abs(svgY(t) - cy) > 8 && (
+              <text x={cx - 8} y={svgY(t)} fontSize="9" fill="#7A7A8A" textAnchor="end" dominantBaseline="middle">{t}</text>
+            )}
+          </g>
+        ))}
+
+        {/* Axis labels */}
+        <text x={W - 10} y={cy + 16} fontSize="13" fill="#6B6B7A" fontFamily="Georgia, serif" fontStyle="italic" textAnchor="end">x</text>
+        <text x={cx + 8} y={10} fontSize="13" fill="#6B6B7A" fontFamily="Georgia, serif" fontStyle="italic">y</text>
+
+        {/* Parallelogram for Add */}
+        {op === VecOpKind.Add && pR && highlightResult && (
+          <polygon
+            points={`${origin[0]},${origin[1]} ${pA[0]},${pA[1]} ${pR[0]},${pR[1]} ${pB[0]},${pB[1]}`}
+            fill="none" stroke="#AAAAAA" strokeWidth="1" strokeDasharray="5,4"
+          />
+        )}
+
+        {/* Ghost of A from tip of B for Add/Sub */}
+        {(op === VecOpKind.Add || op === VecOpKind.Sub) && pR && highlightResult && (
+          <Arrow
+            ox={pB[0]} oy={pB[1]}
+            tx={pB[0] + (pA[0] - origin[0])} ty={pB[1] + (pA[1] - origin[1])}
+            color={colorA} opacity={0.28} dashed
+          />
+        )}
+
+        {/* Vector A */}
+        {vecA.some(v => v !== 0) && (
+          <Arrow ox={origin[0]} oy={origin[1]} tx={pA[0]} ty={pA[1]}
+            color={colorA} label="a" opacity={highlightA ? 1 : 0.5} />
+        )}
+
+        {/* Vector B */}
+        {showB && (
+          <Arrow ox={origin[0]} oy={origin[1]} tx={pB[0]} ty={pB[1]}
+            color={colorB} label="b" opacity={highlightB ? 1 : 0.5} />
+        )}
+
+        {/* Result */}
+        {pR && highlightResult && (
+          <Arrow ox={origin[0]} oy={origin[1]} tx={pR[0]} ty={pR[1]} color={colorR} label="r" />
+        )}
+
+        {/* Angle arc for Dot product */}
+        {showAngleArc && vecA.some(v => v !== 0) && vecB.some(v => v !== 0) && (() => {
+          const magA_px = Math.sqrt((pA[0] - cx) ** 2 + (pA[1] - cy) ** 2)
+          const magB_px = Math.sqrt((pB[0] - cx) ** 2 + (pB[1] - cy) ** 2)
+          const arcR = Math.max(18, Math.min(45, Math.min(magA_px, magB_px) * 0.35))
+
+          const startAngle = Math.atan2(-vecA[1], vecA[0])
+          const endAngle   = Math.atan2(-vecB[1], vecB[0])
+          let delta = endAngle - startAngle
+          while (delta >  Math.PI) delta -= 2 * Math.PI
+          while (delta < -Math.PI) delta += 2 * Math.PI
+
+          const sweep = delta > 0 ? 1 : 0
+          const sx = cx + arcR * Math.cos(startAngle)
+          const sy = cy + arcR * Math.sin(startAngle)
+          const ex = cx + arcR * Math.cos(endAngle)
+          const ey = cy + arcR * Math.sin(endAngle)
+
+          const midAngle = startAngle + delta / 2
+          const lblR = arcR + 14
+          const lx = cx + lblR * Math.cos(midAngle)
+          const ly = cy + lblR * Math.sin(midAngle)
+
+          return (
+            <g key={arcKey}>
+              <path
+                d={`M ${sx} ${sy} A ${arcR} ${arcR} 0 0 ${sweep} ${ex} ${ey}`}
+                fill="none"
+                stroke="#E0A020"
+                strokeWidth="2"
+                pathLength="1"
+                strokeDasharray="1"
+                style={{ strokeDashoffset: 1, animation: 'drawArc 0.8s ease-out forwards' } as React.CSSProperties}
+              />
+              <text
+                x={lx} y={ly}
+                fontSize="13" fontFamily="Georgia, serif" fontStyle="italic"
+                fill="#E0A020" textAnchor="middle" dominantBaseline="middle"
+                style={{ opacity: 0, animation: 'fadeIn 0.4s ease 0.7s forwards' } as React.CSSProperties}
+              >
+                θ
+              </text>
+            </g>
+          )
+        })()}
+
+        {/* Origin dot */}
+        <circle cx={cx} cy={cy} r="3.5" fill="#7A7A8A" />
+      </g>
+
+      {/* Fixed overlays (outside zoom group) */}
       {vecA[2] !== 0 && (
         <text x={W / 2} y={H - 8} fontSize="10" fill="#7A7A8A" textAnchor="middle">
           z ignorada en vista 2D
         </text>
       )}
+      <text x={W - 6} y={H - 6} fontSize="9" fill="#AAAAAA" textAnchor="end">
+        doble clic para resetear
+      </text>
     </svg>
   )
 }

@@ -8,6 +8,7 @@ import VectorSteps from './VectorSteps'
 
 type V3 = [number, number, number]
 type ViewMode = '2d' | '3d'
+type Dimension = 'r2' | 'r3'
 
 const OP_LABELS: { id: VecOpKind; label: string; sub: string; needsB: boolean; needsScalar: boolean }[] = [
   { id: VecOpKind.Add,       label: 'Suma',           sub: 'a + b',    needsB: true,  needsScalar: false },
@@ -27,14 +28,17 @@ const IconBack  = () => <svg width="14" height="14" viewBox="0 0 14 14" fill="no
 const IconList  = () => <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"><line x1="4" y1="3.5" x2="12" y2="3.5"/><line x1="4" y1="7" x2="12" y2="7"/><line x1="4" y1="10.5" x2="12" y2="10.5"/><circle cx="2" cy="3.5" r="0.7" fill="currentColor"/><circle cx="2" cy="7" r="0.7" fill="currentColor"/><circle cx="2" cy="10.5" r="0.7" fill="currentColor"/></svg>
 const IconDice  = () => <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="1" y="1" width="12" height="12" rx="2.5" fill="none" stroke="currentColor" strokeWidth="1.3"/><circle cx="4.5" cy="4.5" r="1"/><circle cx="9.5" cy="4.5" r="1"/><circle cx="7" cy="7" r="1"/><circle cx="4.5" cy="9.5" r="1"/><circle cx="9.5" cy="9.5" r="1"/></svg>
 
-function VecInput({ label, value, onChange }: { label: string; value: V3; onChange: (v: V3) => void }) {
+function VecInput({ label, value, onChange, showZ = true }: {
+  label: string; value: V3; onChange: (v: V3) => void; showZ?: boolean
+}) {
+  const axes = showZ ? (['x', 'y', 'z'] as const) : (['x', 'y'] as const)
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
       <span style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', fontSize: 14, color: 'var(--ink)' }}>
         Vector <strong style={{ fontWeight: 600 }}>{label}</strong>
       </span>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
-        {(['x', 'y', 'z'] as const).map((axis, i) => (
+      <div style={{ display: 'grid', gridTemplateColumns: showZ ? '1fr 1fr 1fr' : '1fr 1fr', gap: 6 }}>
+        {axes.map((axis, i) => (
           <div key={axis} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
             <span style={{ fontSize: 11, color: 'var(--ink-faint)', fontStyle: 'italic', fontFamily: 'var(--font-serif)' }}>{axis}</span>
             <input
@@ -50,51 +54,79 @@ function VecInput({ label, value, onChange }: { label: string; value: V3; onChan
 }
 
 export default function VectorsPage() {
-  const [vecA, setVecA]       = useState<V3>([1, 2, 0])
-  const [vecB, setVecB]       = useState<V3>([3, -1, 0])
-  const [scalar, setScalar]   = useState(2)
-  const [op, setOp]           = useState<VecOpKind>(VecOpKind.Add)
-  const [steps, setSteps]     = useState<VecStep[]>([])
-  const [result, setResult]   = useState<V3 | null>(null)
-  const [stepIdx, setStepIdx] = useState(0)
-  const [playing, setPlaying] = useState(false)
-  const [view, setView]       = useState<ViewMode>('3d')
+  const [vecA, setVecA]         = useState<V3>([1, 2, 0])
+  const [vecB, setVecB]         = useState<V3>([3, -1, 0])
+  const [scalar, setScalar]     = useState(2)
+  const [op, setOp]             = useState<VecOpKind>(VecOpKind.Add)
+  const [steps, setSteps]       = useState<VecStep[]>([])
+  const [result, setResult]     = useState<V3 | null>(null)
+  const [stepIdx, setStepIdx]   = useState(0)
+  const [playing, setPlaying]   = useState(false)
+  const [view, setView]         = useState<ViewMode>('2d')
   const [showPanel, setShowPanel] = useState(false)
-  const [arcKey, setArcKey]       = useState(0)
-  const timerRef              = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [arcKey, setArcKey]     = useState(0)
+  const [dimension, setDimension] = useState<Dimension>('r2')
+  const timerRef                = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const meta = OP_LABELS.find(o => o.id === op)!
+  const showZ = dimension === 'r3'
+  const effectiveView: ViewMode = dimension === 'r2' ? '2d' : view
+
+  const switchDimension = useCallback((dim: Dimension) => {
+    setDimension(dim)
+    if (dim === 'r2') {
+      setVecA(v => [v[0], v[1], 0])
+      setVecB(v => [v[0], v[1], 0])
+      setView('2d')
+      // cross product only meaningful in r3; switch to add if needed
+      if (op === VecOpKind.Cross) setOp(VecOpKind.Add)
+    } else {
+      setView('3d')
+    }
+    setSteps([]); setResult(null)
+  }, [op])
+
+  const changeOp = useCallback((newOp: VecOpKind) => {
+    if (newOp === VecOpKind.Cross && dimension === 'r2') {
+      setDimension('r3')
+      setView('3d')
+    }
+    setOp(newOp)
+    setSteps([]); setResult(null)
+  }, [dimension])
 
   const randomizeVectors = useCallback(() => {
     const ri  = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min
     const rv2 = (): V3 => [ri(-5, 5), ri(-5, 5), 0]
     const rv3 = (): V3 => [ri(-4, 4), ri(-4, 4), ri(-4, 4)]
+    const rv  = (): V3 => dimension === 'r3' ? rv3() : rv2()
     switch (op) {
       case VecOpKind.Add:
       case VecOpKind.Sub:
       case VecOpKind.Dot:
-        setVecA(rv2()); setVecB(rv2()); break
+        setVecA(rv()); setVecB(rv()); break
       case VecOpKind.Cross:
         setVecA(rv3()); setVecB(rv3()); break
-      case VecOpKind.Scale: {
-        setVecA(rv2())
+      case VecOpKind.Scale:
+        setVecA(rv())
         setScalar(ri(2, 6) * (Math.random() < 0.3 ? -1 : 1))
         break
-      }
       case VecOpKind.Normalize: {
         let a: V3
-        do { a = [ri(1, 5), ri(1, 5), 0] } while (a[0] === 0 && a[1] === 0)
+        do { a = dimension === 'r3' ? rv3() : rv2() } while (a[0] === 0 && a[1] === 0 && a[2] === 0)
         setVecA(a)
         break
       }
     }
     setSteps([]); setResult(null)
-  }, [op])
+  }, [op, dimension])
 
   const compute = useCallback(() => {
-    const { steps: s, result: r } = computeVectorOp(vecA, vecB, op, scalar)
+    const a: V3 = dimension === 'r2' ? [vecA[0], vecA[1], 0] : vecA
+    const b: V3 = dimension === 'r2' ? [vecB[0], vecB[1], 0] : vecB
+    const { steps: s, result: r } = computeVectorOp(a, b, op, scalar)
     setSteps(s); setResult(r); setStepIdx(0); setPlaying(true)
-  }, [vecA, vecB, op, scalar])
+  }, [vecA, vecB, op, scalar, dimension])
 
   useEffect(() => {
     if (!playing) return
@@ -137,10 +169,26 @@ export default function VectorsPage() {
                 Suma, resta, producto punto y cruz, norma y ángulo — visualización en 2D y 3D.
               </p>
 
+              {/* Dimension selector */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                <span style={{ fontSize: 13, color: 'var(--ink-faint)', fontFamily: 'var(--font-serif)', fontStyle: 'italic' }}>
+                  Espacio:
+                </span>
+                {(['r2', 'r3'] as Dimension[]).map(d => (
+                  <button key={d}
+                    className={`view-toggle-btn${dimension === d ? ' view-toggle-btn--active' : ''}`}
+                    onClick={() => switchDimension(d)}
+                    style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', minWidth: 44 }}>
+                    {d === 'r2' ? 'ℝ²' : 'ℝ³'}
+                  </button>
+                ))}
+              </div>
+
               <div className="op-selector op-selector--cols2">
                 {OP_LABELS.map(o => (
-                  <button key={o.id} className={`op-pill${op === o.id ? ' op-pill--active' : ''}`}
-                    onClick={() => { setOp(o.id); setSteps([]); setResult(null) }}>
+                  <button key={o.id}
+                    className={`op-pill${op === o.id ? ' op-pill--active' : ''}`}
+                    onClick={() => changeOp(o.id)}>
                     <span className="op-pill-label">{o.label}</span>
                     <span className="op-pill-sub">{o.sub}</span>
                   </button>
@@ -148,8 +196,8 @@ export default function VectorsPage() {
               </div>
 
               <div className="vec-pair">
-                <VecInput label="a" value={vecA} onChange={setVecA} />
-                {meta.needsB && <VecInput label="b" value={vecB} onChange={setVecB} />}
+                <VecInput label="a" value={vecA} onChange={setVecA} showZ={showZ} />
+                {meta.needsB && <VecInput label="b" value={vecB} onChange={setVecB} showZ={showZ} />}
               </div>
 
               {meta.needsScalar && (
@@ -178,13 +226,26 @@ export default function VectorsPage() {
               <div className="module-landing-examples">
                 {VECTOR_EXAMPLES.map(ex => (
                   <button key={ex.name} className="example-pill"
-                    onClick={() => { setOp(ex.op); setVecA(ex.a); setVecB(ex.b); setSteps([]); setResult(null) }}>
+                    onClick={() => {
+                      const dim: Dimension = ex.op === VecOpKind.Cross ? 'r3' : dimension
+                      if (dim !== dimension) {
+                        setDimension(dim)
+                        setView(dim === 'r3' ? '3d' : '2d')
+                      }
+                      setOp(ex.op)
+                      const a: V3 = dim === 'r2' ? [ex.a[0], ex.a[1], 0] : ex.a
+                      const b: V3 = dim === 'r2' ? [ex.b[0], ex.b[1], 0] : ex.b
+                      setVecA(a); setVecB(b)
+                      setSteps([]); setResult(null)
+                    }}>
                     <div className="example-pill-name">{ex.name}</div>
                   </button>
                 ))}
               </div>
               <div className="module-landing-hint">
-                Arrastra para rotar la escena 3D · scroll para zoom
+                {dimension === 'r3'
+                  ? 'Arrastra para rotar la escena 3D · scroll para zoom'
+                  : 'Scroll para zoom · Arrastra para mover · Doble clic para resetear'}
               </div>
             </div>
           </div>
@@ -194,17 +255,21 @@ export default function VectorsPage() {
           {/* ── Full-screen vector scene ── */}
           <div className="gauss-matrix-stage">
             <div className="cinema-vector-scene">
-              {view === '3d' ? <Vector3DScene {...sceneProps} /> : <Vector2DScene {...sceneProps} />}
+              {effectiveView === '3d'
+                ? <Vector3DScene {...sceneProps} />
+                : <Vector2DScene {...sceneProps} />}
             </div>
           </div>
 
-          {/* ── 2D/3D toggle floating top-right ── */}
-          <div className="vectors-view-toggle">
-            <button className={`view-toggle-btn${view === '2d' ? ' view-toggle-btn--active' : ''}`}
-              onClick={() => setView('2d')}>2D</button>
-            <button className={`view-toggle-btn${view === '3d' ? ' view-toggle-btn--active' : ''}`}
-              onClick={() => setView('3d')}>3D</button>
-          </div>
+          {/* ── 2D/3D toggle — only in r3 ── */}
+          {dimension === 'r3' && (
+            <div className="vectors-view-toggle">
+              <button className={`view-toggle-btn${view === '2d' ? ' view-toggle-btn--active' : ''}`}
+                onClick={() => setView('2d')}>2D</button>
+              <button className={`view-toggle-btn${view === '3d' ? ' view-toggle-btn--active' : ''}`}
+                onClick={() => setView('3d')}>3D</button>
+            </div>
+          )}
 
           {/* ── Floating step info top-left ── */}
           <div className="gauss-cinema-info">
