@@ -14,9 +14,12 @@ interface AppStore {
 export const useAppStore = create<AppStore>(set => ({
   mode: 'gauss',
   setMode: mode => set({ mode }),
-  theme: (localStorage.getItem('ml-theme') as 'light' | 'dark') || 'light',
+  theme: (() => {
+    try { return (localStorage.getItem('ml-theme') as 'light' | 'dark') || 'light' }
+    catch { return 'light' }
+  })(),
   setTheme: theme => {
-    localStorage.setItem('ml-theme', theme)
+    try { localStorage.setItem('ml-theme', theme) } catch { /* storage unavailable */ }
     set({ theme })
   },
   collapsed: false,

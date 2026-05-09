@@ -33,7 +33,7 @@ function parseEquation(eq: string, vars: string[]): number[] {
   const rhs = eq.slice(idx + 1).trim()
 
   const constant = parseFloat(rhs)
-  if (isNaN(constant)) throw new Error(`Constante inválida: "${rhs}"`)
+  if (isNaN(constant) || !isFinite(constant)) throw new Error(`Constante inválida: "${rhs}"`)
 
   const coeffMap = parseLHS(lhs)
   const row = vars.map(v => coeffMap[v] ?? 0)
@@ -60,7 +60,7 @@ function parseLHS(lhs: string): Record<string, number> {
     else if (coeffStr === '-') coeff = -1
     else {
       coeff = parseFloat(coeffStr)
-      if (isNaN(coeff)) throw new Error(`Coeficiente inválido: "${coeffStr}"`)
+      if (isNaN(coeff) || !isFinite(coeff)) throw new Error(`Coeficiente inválido: "${coeffStr}"`)
     }
 
     coeffs[varName] = (coeffs[varName] ?? 0) + coeff

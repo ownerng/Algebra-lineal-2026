@@ -76,8 +76,10 @@ interface Props {
 
 export default function MatrixGridInput({ label, values, onChange }: Props) {
   const update = (r: number, c: number, val: string) => {
+    const parsed = parseVal(val)
+    if (parsed === values[r][c]) return
     const next = values.map(row => [...row])
-    next[r][c] = parseVal(val)
+    next[r][c] = parsed
     onChange(next)
   }
 
