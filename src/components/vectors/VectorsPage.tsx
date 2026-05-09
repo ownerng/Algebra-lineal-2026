@@ -25,6 +25,7 @@ const IconNext  = () => <svg width="14" height="14" viewBox="0 0 14 14" fill="cu
 const IconReset = () => <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"><path d="M2.5 7 a4.5 4.5 0 1 0 1.5-3.4"/><polyline points="2,2 2,4.5 4.5,4.5"/></svg>
 const IconBack  = () => <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><line x1="12" y1="7" x2="3" y2="7"/><polyline points="6,4 3,7 6,10"/></svg>
 const IconList  = () => <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"><line x1="4" y1="3.5" x2="12" y2="3.5"/><line x1="4" y1="7" x2="12" y2="7"/><line x1="4" y1="10.5" x2="12" y2="10.5"/><circle cx="2" cy="3.5" r="0.7" fill="currentColor"/><circle cx="2" cy="7" r="0.7" fill="currentColor"/><circle cx="2" cy="10.5" r="0.7" fill="currentColor"/></svg>
+const IconDice  = () => <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="1" y="1" width="12" height="12" rx="2.5" fill="none" stroke="currentColor" strokeWidth="1.3"/><circle cx="4.5" cy="4.5" r="1"/><circle cx="9.5" cy="4.5" r="1"/><circle cx="7" cy="7" r="1"/><circle cx="4.5" cy="9.5" r="1"/><circle cx="9.5" cy="9.5" r="1"/></svg>
 
 function VecInput({ label, value, onChange }: { label: string; value: V3; onChange: (v: V3) => void }) {
   return (
@@ -62,6 +63,32 @@ export default function VectorsPage() {
   const timerRef              = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const meta = OP_LABELS.find(o => o.id === op)!
+
+  const randomizeVectors = useCallback(() => {
+    const ri  = (min: number, max: number): number => Math.floor(Math.random() * (max - min + 1)) + min
+    const rv2 = (): V3 => [ri(-5, 5), ri(-5, 5), 0]
+    const rv3 = (): V3 => [ri(-4, 4), ri(-4, 4), ri(-4, 4)]
+    switch (op) {
+      case VecOpKind.Add:
+      case VecOpKind.Sub:
+      case VecOpKind.Dot:
+        setVecA(rv2()); setVecB(rv2()); break
+      case VecOpKind.Cross:
+        setVecA(rv3()); setVecB(rv3()); break
+      case VecOpKind.Scale: {
+        setVecA(rv2())
+        setScalar(ri(2, 6) * (Math.random() < 0.3 ? -1 : 1))
+        break
+      }
+      case VecOpKind.Normalize: {
+        let a: V3
+        do { a = [ri(1, 5), ri(1, 5), 0] } while (a[0] === 0 && a[1] === 0)
+        setVecA(a)
+        break
+      }
+    }
+    setSteps([]); setResult(null)
+  }, [op])
 
   const compute = useCallback(() => {
     const { steps: s, result: r } = computeVectorOp(vecA, vecB, op, scalar)
@@ -128,6 +155,9 @@ export default function VectorsPage() {
               )}
 
               <div className="module-landing-actions">
+                <button className="btn btn-ghost" onClick={randomizeVectors} style={{ fontSize: 13 }} title="Vectores aleatorios">
+                  <IconDice /> Aleatorio
+                </button>
                 <button className="btn btn-primary btn-go" onClick={compute}>
                   Animar operación
                 </button>

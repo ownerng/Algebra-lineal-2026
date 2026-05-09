@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react'
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { parse } from '../../engine/parser'
 import { solve } from '../../engine/gauss'
 import { StepType, type Step } from '../../engine/types'
@@ -14,6 +14,9 @@ const IconAdd    = () => <svg width="14" height="14" viewBox="0 0 14 14" fill="n
 const IconRemove = () => <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><line x1="3" y1="7" x2="11" y2="7"/></svg>
 const IconBack   = () => <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"><line x1="12" y1="7" x2="3" y2="7"/><polyline points="6,4 3,7 6,10"/></svg>
 const IconList   = () => <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"><line x1="4" y1="3.5" x2="12" y2="3.5"/><line x1="4" y1="7" x2="12" y2="7"/><line x1="4" y1="10.5" x2="12" y2="10.5"/><circle cx="2" cy="3.5" r="0.7" fill="currentColor"/><circle cx="2" cy="7" r="0.7" fill="currentColor"/><circle cx="2" cy="10.5" r="0.7" fill="currentColor"/></svg>
+const IconDice   = () => <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="1" y="1" width="12" height="12" rx="2.5" fill="none" stroke="currentColor" strokeWidth="1.3"/><circle cx="4.5" cy="4.5" r="1"/><circle cx="9.5" cy="4.5" r="1"/><circle cx="7" cy="7" r="1"/><circle cx="4.5" cy="9.5" r="1"/><circle cx="9.5" cy="9.5" r="1"/></svg>
+
+const VARS = ['x', 'y', 'z', 'w']
 
 interface Highlight {
   pivotRow?: number; pivotCol?: number
@@ -89,6 +92,32 @@ export default function GaussPage() {
     setEquations(p => { const n = [...p]; n[i] = v; return n }); setResult(null)
   }
 
+  const randomizeGauss = useCallback(() => {
+    const n    = equations.length
+    const vars = VARS.slice(0, n)
+    const sol  = Array.from({ length: n }, () => Math.floor(Math.random() * 11) - 5)
+    const coeffs = Array.from({ length: n }, () => {
+      let row: number[]
+      do { row = Array.from({ length: n }, () => Math.floor(Math.random() * 13) - 6) }
+      while (row.every(c => c === 0))
+      return row
+    })
+    const eqs = coeffs.map(row => {
+      const rhs   = row.reduce((sum, c, j) => sum + c * sol[j], 0)
+      const terms = row.map((c, j) => {
+        if (c === 0) return null
+        const abs  = Math.abs(c)
+        const coef = abs === 1 ? '' : String(abs)
+        return `${c > 0 ? '+' : '-'}${coef}${vars[j]}`
+      }).filter(Boolean) as string[]
+      if (terms.length === 0) return `0 = ${rhs}`
+      const first = terms[0].startsWith('+') ? terms[0].slice(1) : terms[0]
+      const rest  = terms.slice(1).map(t => t.startsWith('+') ? ` + ${t.slice(1)}` : ` - ${t.slice(1)}`)
+      return `${first}${rest.join('')} = ${rhs}`
+    })
+    setEquations(eqs); setResult(null); setError('')
+  }, [equations.length])
+
   const handleSolve = () => {
     setError('')
     try {
@@ -161,6 +190,9 @@ export default function GaussPage() {
               <div className="module-landing-actions">
                 <button className="btn btn-ghost" onClick={addEq} style={{ fontSize: 13 }}>
                   <IconAdd /> Agregar
+                </button>
+                <button className="btn btn-ghost" onClick={randomizeGauss} style={{ fontSize: 13 }} title="Sistema aleatorio">
+                  <IconDice /> Aleatorio
                 </button>
                 <button className="btn btn-primary btn-go" onClick={handleSolve}>
                   Resolver
