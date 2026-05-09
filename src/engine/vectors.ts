@@ -110,7 +110,10 @@ export function computeVectorOp(a: V3, b: V3, op: VecOpKind, scalar = 1): { step
           description: 'Ángulo entre vectores',
           reason: `Si a·b > 0 el ángulo es agudo; si a·b = 0 son perpendiculares; si a·b < 0 es obtuso.`,
           latex: `\\theta = \\arccos\\!\\left(\\frac{${fmt(dot)}}{${fmt(magA)} \\cdot ${fmt(magB)}}\\right) \\approx ${angle}°`,
+          highlightA: true,
+          highlightB: true,
           highlightResult: true,
+          showAngleArc: true,
         })
       }
       break

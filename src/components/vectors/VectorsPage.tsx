@@ -60,6 +60,7 @@ export default function VectorsPage() {
   const [playing, setPlaying] = useState(false)
   const [view, setView]       = useState<ViewMode>('3d')
   const [showPanel, setShowPanel] = useState(false)
+  const [arcKey, setArcKey]       = useState(0)
   const timerRef              = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const meta = OP_LABELS.find(o => o.id === op)!
@@ -103,6 +104,12 @@ export default function VectorsPage() {
   }, [playing, stepIdx, steps.length])
 
   const step = steps[stepIdx]
+  const showAngleArc = step?.showAngleArc ?? false
+
+  useEffect(() => {
+    if (showAngleArc) setArcKey(k => k + 1)
+  }, [showAngleArc])
+
   const sceneProps = {
     vecA,
     vecB: meta.needsB ? vecB : [0, 0, 0] as V3,
@@ -111,6 +118,8 @@ export default function VectorsPage() {
     highlightA:      step?.highlightA      ?? true,
     highlightB:      step?.highlightB      ?? true,
     highlightResult: step?.highlightResult ?? false,
+    showAngleArc,
+    arcKey,
   }
 
   const hasAnim = steps.length > 0

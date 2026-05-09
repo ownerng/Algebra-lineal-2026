@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import React, { useMemo } from 'react'
 import { VecOpKind } from '../../engine/types'
 
 type V3 = [number, number, number]
@@ -11,6 +11,8 @@ interface Props {
   highlightA?: boolean
   highlightB?: boolean
   highlightResult?: boolean
+  showAngleArc?: boolean
+  arcKey?: number
 }
 
 interface ArrowProps {
@@ -68,6 +70,7 @@ function Arrow({ ox, oy, tx, ty, color, label, opacity = 1, dashed = false }: Ar
 export default function Vector2DScene({
   vecA, vecB, result, op,
   highlightA = true, highlightB = true, highlightResult = false,
+  showAngleArc = false, arcKey = 0,
 }: Props) {
   const W = 400
   const H = 400
@@ -178,6 +181,52 @@ export default function Vector2DScene({
       {pR && highlightResult && (
         <Arrow ox={origin[0]} oy={origin[1]} tx={pR[0]} ty={pR[1]} color={colorR} label="r" />
       )}
+
+      {/* Angle arc for Dot product */}
+      {showAngleArc && vecA.some(v => v !== 0) && vecB.some(v => v !== 0) && (() => {
+        const magA_px = Math.sqrt((pA[0] - cx) ** 2 + (pA[1] - cy) ** 2)
+        const magB_px = Math.sqrt((pB[0] - cx) ** 2 + (pB[1] - cy) ** 2)
+        const arcR = Math.max(18, Math.min(45, Math.min(magA_px, magB_px) * 0.35))
+
+        const startAngle = Math.atan2(-vecA[1], vecA[0])
+        const endAngle   = Math.atan2(-vecB[1], vecB[0])
+        let delta = endAngle - startAngle
+        while (delta >  Math.PI) delta -= 2 * Math.PI
+        while (delta < -Math.PI) delta += 2 * Math.PI
+
+        const sweep = delta > 0 ? 1 : 0
+        const sx = cx + arcR * Math.cos(startAngle)
+        const sy = cy + arcR * Math.sin(startAngle)
+        const ex = cx + arcR * Math.cos(endAngle)
+        const ey = cy + arcR * Math.sin(endAngle)
+
+        const midAngle = startAngle + delta / 2
+        const lblR = arcR + 14
+        const lx = cx + lblR * Math.cos(midAngle)
+        const ly = cy + lblR * Math.sin(midAngle)
+
+        return (
+          <g key={arcKey}>
+            <path
+              d={`M ${sx} ${sy} A ${arcR} ${arcR} 0 0 ${sweep} ${ex} ${ey}`}
+              fill="none"
+              stroke="#E0A020"
+              strokeWidth="2"
+              pathLength="1"
+              strokeDasharray="1"
+              style={{ strokeDashoffset: 1, animation: 'drawArc 0.8s ease-out forwards' } as React.CSSProperties}
+            />
+            <text
+              x={lx} y={ly}
+              fontSize="13" fontFamily="Georgia, serif" fontStyle="italic"
+              fill="#E0A020" textAnchor="middle" dominantBaseline="middle"
+              style={{ opacity: 0, animation: 'fadeIn 0.4s ease 0.7s forwards' } as React.CSSProperties}
+            >
+              θ
+            </text>
+          </g>
+        )
+      })()}
 
       {/* Origin dot */}
       <circle cx={cx} cy={cy} r="3.5" fill="#7A7A8A" />

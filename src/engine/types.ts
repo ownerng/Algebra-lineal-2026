@@ -78,4 +78,5 @@ export interface VecStep {
   highlightA?: boolean
   highlightB?: boolean
   highlightResult?: boolean
+  showAngleArc?: boolean
 }

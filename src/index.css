@@ -1599,3 +1599,14 @@ input[type=number] { -moz-appearance: textfield; appearance: textfield; }
   .gauss-cinema-desc { font-size: 16px; }
   .gauss-cinema-solution { font-size: 18px; padding: 10px 16px; }
 }
+
+
+/* ─── Angle arc animations ───────────────────────────────────────────────── */
+@keyframes drawArc {
+  from { stroke-dashoffset: 1; }
+  to   { stroke-dashoffset: 0; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}

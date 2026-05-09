@@ -1,4 +1,4 @@
-import { useRef, useMemo } from 'react'
+import { useRef, useMemo, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, Line, Text } from '@react-three/drei'
 import * as THREE from 'three'
@@ -68,6 +68,54 @@ function Arrow({ from = [0, 0, 0], to, color, label, opacity: _opacity = 1, anim
   )
 }
 
+function slerp3(v0: THREE.Vector3, v1: THREE.Vector3, t: number): THREE.Vector3 {
+  const dot = Math.min(1, Math.max(-1, v0.dot(v1)))
+  const theta = Math.acos(dot)
+  if (Math.abs(theta) < 1e-10) return v0.clone()
+  const sinT = Math.sin(theta)
+  return v0.clone().multiplyScalar(Math.sin((1 - t) * theta) / sinT)
+    .add(v1.clone().multiplyScalar(Math.sin(t * theta) / sinT))
+}
+
+function AnimatedArc({ vA, vB }: { vA: THREE.Vector3; vB: THREE.Vector3 }) {
+  const progressRef = useRef(0)
+  const [pts, setPts] = useState<THREE.Vector3[]>(() => [
+    vA.clone().multiplyScalar(0.5),
+    vA.clone().multiplyScalar(0.501),
+  ])
+  const [done, setDone] = useState(false)
+
+  useFrame((_, delta) => {
+    if (progressRef.current >= 1) return
+    progressRef.current = Math.min(1, progressRef.current + delta / 0.8)
+    const count = Math.max(2, Math.floor(progressRef.current * 33))
+    const newPts: THREE.Vector3[] = []
+    for (let i = 0; i < count; i++) {
+      newPts.push(slerp3(vA, vB, i / 32).multiplyScalar(0.5))
+    }
+    setPts(newPts)
+    if (progressRef.current >= 1) setDone(true)
+  })
+
+  const midPt = slerp3(vA, vB, 0.5).multiplyScalar(0.65)
+
+  return (
+    <>
+      <Line points={pts} color="#E0A020" lineWidth={2} />
+      {done && (
+        <Text
+          position={[midPt.x, midPt.y, midPt.z]}
+          fontSize={0.18} color="#E0A020"
+          anchorX="center" anchorY="middle"
+          outlineWidth={0.012} outlineColor="#00000040"
+        >
+          θ
+        </Text>
+      )}
+    </>
+  )
+}
+
 function AxisLabels() {
   return (
     <>
@@ -100,9 +148,10 @@ interface SceneProps {
   highlightB: boolean
   highlightResult: boolean
   showParallelogram: boolean
+  showAngleArc: boolean
 }
 
-function SceneContent({ vecA, vecB, result, op, highlightA, highlightB, highlightResult, showParallelogram }: SceneProps) {
+function SceneContent({ vecA, vecB, result, op, highlightA, highlightB, highlightResult, showParallelogram, showAngleArc }: SceneProps) {
   const showResult = result && highlightResult
   const showA = vecA.some(v => v !== 0)
   const showB = vecB.some(v => v !== 0) && op !== VecOpKind.Scale && op !== VecOpKind.Normalize
@@ -175,6 +224,13 @@ function SceneContent({ vecA, vecB, result, op, highlightA, highlightB, highligh
           animate={true}
         />
       )}
+
+      {showAngleArc && showA && showB && (
+        <AnimatedArc
+          vA={new THREE.Vector3(...vecA).normalize()}
+          vB={new THREE.Vector3(...vecB).normalize()}
+        />
+      )}
     </>
   )
 }
@@ -187,9 +243,10 @@ interface Props {
   highlightA?: boolean
   highlightB?: boolean
   highlightResult?: boolean
+  showAngleArc?: boolean
 }
 
-export default function Vector3DScene({ vecA, vecB, result, op, highlightA = true, highlightB = true, highlightResult = false }: Props) {
+export default function Vector3DScene({ vecA, vecB, result, op, highlightA = true, highlightB = true, highlightResult = false, showAngleArc = false }: Props) {
   const showParallelogram = op === VecOpKind.Add || op === VecOpKind.Sub
 
   return (
@@ -207,6 +264,7 @@ export default function Vector3DScene({ vecA, vecB, result, op, highlightA = tru
         highlightB={highlightB}
         highlightResult={highlightResult}
         showParallelogram={showParallelogram}
+        showAngleArc={showAngleArc}
       />
       <OrbitControls
         enablePan={false}
